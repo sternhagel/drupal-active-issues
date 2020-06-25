@@ -16,6 +16,6 @@ Drupal 8 test environment for displaying recently active issues for drupal.org p
 
 ## Known issues
  - The automatically installed demo block depends on the default `Bartik` theme being used.
- - According to the original task the block should display the "most active" issues in the queue. There's some room for interpretation here.
- - My first choice was to sort the issues by the number of comments because many comments are a strong indicator for activity. Unfortunately the API doesn't seem to support it.
- - Now the listing shows only active issues, starting with the most recently updated - which is the closest I could get to "most active".
+ - According to the original task the block should display the "most active" issues in the queue. There's some room for interpretation here:
+  - My first choice was to sort the issues by the number of comments because many comments are a strong indicator for activity. Unfortunately the API doesn't seem to support it.
+  - Now the listing shows only active issues, starting with the most recently updated - which is the closest I could get to "most active".
