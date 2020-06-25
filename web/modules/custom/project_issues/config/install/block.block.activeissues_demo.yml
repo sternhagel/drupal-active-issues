@@ -18,7 +18,7 @@ settings:
   provider: project_issues
   label_display: visible
   project_machine_name: tetris
-  maximum_number: '10'
+  maximum_number: '5'
 visibility:
   request_path:
     id: request_path

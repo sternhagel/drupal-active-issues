@@ -57,6 +57,7 @@ class ProjectIssues extends BlockBase implements BlockPluginInterface {
         'field_project_machine_name' => $machine_name,
       ]
     ]);
+    // unserialize JSON data
     $project_info = Json::decode($project_response->getBody());
     $nid = $project_info['list'][0]['nid'];
 
@@ -84,13 +85,14 @@ class ProjectIssues extends BlockBase implements BlockPluginInterface {
           'field_issue_status' => 1 // only show active issues
         ]
       ]);
+      // unserialize JSON data
       $issue_list = Json::decode($issue_response->getBody());
 
       // output block headline
       $markup = '<h3>' . $max_items .
         ' most recently updated active issues for project <a href="' .
         $project_info['list'][0]['url'] . '" target="_blank" >' .
-        $project_info['list'][0]['title'] . '"</a></h3>';
+        $project_info['list'][0]['title'] . '</a></h3>';
 
       // output HTML list
       $markup .= "<ol>";
