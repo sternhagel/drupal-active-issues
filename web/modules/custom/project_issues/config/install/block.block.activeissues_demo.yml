@@ -1,0 +1,27 @@
+langcode: de
+status: true
+dependencies:
+  module:
+    - project_issues
+    - system
+  theme:
+    - bartik
+id: activeissues_demo
+theme: bartik
+region: content
+weight: 2
+provider: null
+plugin: project_issues
+settings:
+  id: project_issues
+  label: 'Demo block - showing issues to anonymous users'
+  provider: project_issues
+  label_display: visible
+  project_machine_name: tetris
+  maximum_number: '10'
+visibility:
+  request_path:
+    id: request_path
+    pages: '<front>'
+    negate: false
+    context_mapping: {  }
