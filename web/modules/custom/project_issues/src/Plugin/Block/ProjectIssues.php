@@ -16,7 +16,7 @@ use Drupal\Component\Serialization\Json;
  *   admin_label = @Translation("Active issues on drupal.org"),
  *   category = @Translation("Custom"),
  * )
- */ 
+ */
 class ProjectIssues extends BlockBase implements BlockPluginInterface {
 
   /**
@@ -24,31 +24,31 @@ class ProjectIssues extends BlockBase implements BlockPluginInterface {
    */
   public function build() {
 
-    // define HTTP connection to drupal.org using Guzzle
-    /** 
-     * @var \GuzzleHttp\Client $client 
+    /**
+     * Define HTTP connection to drupal.org using Guzzle
+     *
+     * @var \GuzzleHttp\Client The HTTP client.
      */
     $client = \Drupal::service('http_client_factory')->fromOptions([
       'base_uri' => 'https://www.drupal.org/api-d7/',
     ]);
-        
+
     // read configuration of block instance
     $config = $this->getConfiguration();
-    
+
     if (!empty($config['project_machine_name'])) {
       $machine_name = trim($config['project_machine_name']);
     } else {
-      // if config value empty, set some default value
-      $machine_name = 'image_field_caption';
+      $machine_name = '';
     }
-    
+
     if (!empty($config['maximum_number'])) {
       $max_items = $config['maximum_number'];
     } else {
-      // if config value empty, set some default value
+      // if config value empty, set default value
       $max_items = 20;
     }
-    
+
     // API calls to drupal.org
 
     // get node ID of project
@@ -56,51 +56,58 @@ class ProjectIssues extends BlockBase implements BlockPluginInterface {
       'query' => [
         'field_project_machine_name' => $machine_name,
       ]
-    ]);    
+    ]);
     $project_info = Json::decode($project_response->getBody());
     $nid = $project_info['list'][0]['nid'];
-    
-    /** 
-     * get list of issues for project
-     * 
-     * NOTE: original challenge is to get "most active" issues -
-     * which is a bit ambiguous.
-     * 
-     * For now the implementation only shows active issues,
-     * sorting by "last changed" - sorting by "comment_count" might
-     * be preferrable, but is not support by drupal.org
-     * 
-     */
-    $issue_response = $client->get('node.json', [
-      'query' => [
-        'type' => 'project_issue',
-        'field_project' => $nid,
-        'limit' => $max_items,
-        // sorting by 'comment_count' obviously not supported - throws 503 error
-        // 'sort' => 'comment_count'
-        'sort' => 'changed',
-        'direction' => 'DESC',
-        'field_issue_status' => 1, // only show active issues
-      ]
-    ]);
-    $issue_list = Json::decode($issue_response->getBody());
 
-    // output block headline
-    $markup = '<h2>Currently active issues for project "' 
-      . $project_info['list'][0]['title'] . '"</h2>';
-    
-    // output HTML list
-    $markup .= "<ol>";
-    foreach($issue_list["list"] AS $issue) {
-      
-      // convert changed date to readable format
-      $changed = date('d.m.Y H:i', $issue['changed']);
-      
-      $markup .= '<li><a href="' . $issue['url'] . '" target="_blank" >'
-        . $issue['title'] . '</a> - last changed: ' . $changed . '</li>';
+    if (!empty($nid)) {
+
+      /**
+       * Get list of issues for project
+       *
+       * NOTE: original challenge was to get "most active" issues -
+       * which is a bit ambiguous.
+       *
+       * For now the implementation only shows active issues,
+       * sorting by "last changed" - sorting by "comment_count" would
+       * be my preferred option, but is not supported by drupal.org
+       */
+      $issue_response = $client->get('node.json', [
+        'query' => [
+          'type' => 'project_issue',
+          'field_project' => $nid,
+          'limit' => $max_items,
+          // sorting by 'comment_count' apparently not supported - throws 503 error
+          // 'sort' => 'comment_count',
+          'sort' => 'changed', // sort by "last changed" instead...
+          'direction' => 'DESC',
+          'field_issue_status' => 1 // only show active issues
+        ]
+      ]);
+      $issue_list = Json::decode($issue_response->getBody());
+
+      // output block headline
+      $markup = '<h3>' . $max_items .
+        ' most recently updated active issues for project <a href="' .
+        $project_info['list'][0]['url'] . '" target="_blank" >' .
+        $project_info['list'][0]['title'] . '"</a></h3>';
+
+      // output HTML list
+      $markup .= "<ol>";
+      foreach($issue_list["list"] AS $issue) {
+
+        // convert "last changed" date to readable format
+        $changed = date('d.m.Y H:i', $issue['changed']);
+
+        $markup .= '<li><a href="' . $issue['url'] . '" target="_blank" >'
+          . $issue['title'] . '</a> - last changed: ' . $changed . '</li>';
+      }
+      $markup .= "</ol>";
+
+    } else { // if node ID in response is empty..
+      $markup = '<h3>Sorry, no project found on drupal.org for machine name "' . $machine_name . '".</h3>';
     }
-    $markup .= "</ol>";
-    
+
     // return HTML markup
     return [
       '#markup' => $markup
@@ -109,6 +116,12 @@ class ProjectIssues extends BlockBase implements BlockPluginInterface {
 
   /**
    * {@inheritdoc}
+   *
+   * Defines the form elements for configuration of block instances.
+   *
+   * Currently implemented:
+   *  - project_machine_name: machine name of the project of interest
+   *  - maximum_number: maximum number of issues to be shown in the block
    */
   public function blockForm($input_form, FormStateInterface $form_state) {
     $input_form = parent::blockForm($input_form, $form_state);
@@ -121,6 +134,7 @@ class ProjectIssues extends BlockBase implements BlockPluginInterface {
       '#description' => $this->t('Please fill in the machine name of the project (e.g. "ctools").'),
       '#default_value' => isset($config['project_machine_name']) ? $config['project_machine_name'] : '',
     ];
+
     $input_form['maximum_number'] = [
       '#type' => 'number',
       '#title' => $this->t('Maximum number of items'),
@@ -133,6 +147,8 @@ class ProjectIssues extends BlockBase implements BlockPluginInterface {
 
   /**
    * {@inheritdoc}
+   *
+   * Processes the configuration values when submitting the form.
    */
   public function blockSubmit($input_form, FormStateInterface $form_state) {
     $this->setConfigurationValue('project_machine_name', $form_state->getValue('project_machine_name'));
@@ -140,5 +156,3 @@ class ProjectIssues extends BlockBase implements BlockPluginInterface {
   }
 
 }
-
-
