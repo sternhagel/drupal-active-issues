@@ -25,7 +25,9 @@ class ProjectIssuesBlock extends BlockBase implements BlockPluginInterface {
   public function build() {
 
     // define HTTP connection to drupal.org using Guzzle
-    /** @var \GuzzleHttp\Client $client */
+    /** 
+     * @var \GuzzleHttp\Client $client 
+     */
     $client = \Drupal::service('http_client_factory')->fromOptions([
       'base_uri' => 'https://www.drupal.org/api-d7/',
     ]);
