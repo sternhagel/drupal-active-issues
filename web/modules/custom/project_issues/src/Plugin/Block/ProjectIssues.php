@@ -12,12 +12,12 @@ use Drupal\Component\Serialization\Json;
  * projects on drupal.org.
  *
  * @Block(
- *   id = "project_issues_block",
+ *   id = "project_issues",
  *   admin_label = @Translation("Active issues on drupal.org"),
  *   category = @Translation("Custom"),
  * )
  */ 
-class ProjectIssuesBlock extends BlockBase implements BlockPluginInterface {
+class ProjectIssues extends BlockBase implements BlockPluginInterface {
 
   /**
    * {@inheritdoc}
